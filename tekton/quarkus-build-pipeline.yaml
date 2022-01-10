@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: container-build-pipeline
+spec:
+  workspaces:
+  - name: quarkus-maven-repo
+
+  resources:
+  - name: k8s-demo-app-github-repo
+    type: git
+  - name: output-runnable-image
+    type: image
+
+  params:
+    - name: dockerfilePath
+      type: string
+      description: Path containing the Dockerfile for the final image
+      default: "src/main/docker"
+    - name: dockerTag
+      type: string
+      description: Docker Tag reflecting the image version
+      default: "latest"
+
+  tasks:
+  - name: software-package
+    taskRef:
+      name: quarkus-maven-task
+    resources:
+      inputs:
+      - name: source
+        resource: k8s-demo-app-github-repo
+    params:
+    - name: GOALS
+      value: ["-DskipTests=true", "-Dquarkus.package.type=jar", "package"]
+    workspaces:
+    - name: maven-repo
+      workspace: quarkus-maven-repo
+
+  - name: build-container-image
+    taskRef:
+      name: quarkus-build-task
+    params:
+      - name: TLS_VERIFY
+        value: "false"
+      - name: dockerfilePath
+        value: "$(params.dockerfilePath)"
+      - name: dockerTag
+        value: "$(params.dockerTag)"
+    runAfter: ["software-package"]
+    resources:
+      outputs:
+      - name: image
+        resource: output-runnable-image
+    workspaces:
+    - name: maven-repo
+      workspace: quarkus-maven-repo
+
+  finally:
+  - name: clean-workspace
+    taskRef:
+      name: cleanup-workspace
+    workspaces:
+    - name: maven-repo
+      workspace: quarkus-maven-repo
+
