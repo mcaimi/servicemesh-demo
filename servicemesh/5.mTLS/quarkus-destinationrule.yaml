@@ -1,0 +1,15 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: quarkus-app-destinations
+spec:
+  host: frontend-java-runner-service-v1
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: app-v1
+    labels:
+      version: v1
+

@@ -1,0 +1,9 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: mtls-enable-policy
+  namespace: istio-demo
+spec:
+  mtls:
+    mode: STRICT
