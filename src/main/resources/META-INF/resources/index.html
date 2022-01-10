@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>OpenShift & Quarkus Istio Workshop App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/wingcss/0.1.8/wing.min.css"/>
+    <style>
+        body {
+            background-color: rgb(44, 44, 44);
+        }
+
+        input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            -webkit-transition: .5s;
+            transition: .5s;
+            outline: 0;
+            font-family: 'Open Sans', serif;
+        }
+        #flip {
+            padding: 5px;
+            text-align: center;
+            /* background-color: #e5eecc;
+            border: solid 1px #c3c3c3;*/
+        }
+
+        #panel {
+            padding: 50px;
+            display: none;
+            border: solid 1px #c3c3c3;
+            color: #FFFFFF;
+            background-color: #333030;
+            border-radius: 4px;
+            /*background-image: url('redhat-logo.png');
+            opacity:0.2;*/
+        }
+
+        #notes {
+            border-radius: 0px;
+        }
+
+        #container {
+            border: solid 1px #c3c3c3;
+            border-radius: 6px;
+            background-color: white;
+        }
+    </style>
+    <!-- Load AngularJS -->
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="notes_controller.js"></script>
+    <script>
+    $(document).ready(function() {
+        $("#flip").click(function() {
+            $("#panel").slideToggle("slow");
+        });
+        $("#panel").slideDown("slow");
+        $("#notes").show("slow");
+    });
+    </script>
+  </head>
+  <body ng-app="NotesManagement" ng-controller="NotesManagementController">
+    <div class="container" id="container">
+        <center><div id="flip"><img src="redhat-logo.png"/></div></center>
+        <div id="panel">
+            <center><h1>Simple CRUD Notes</h1></center>
+            <p>
+                This application demonstrates how a Quarkus application implements a CRUD endpoint to manage simple notes.
+                This simple frontend interacts via REST APIs with the Quarkus Backend.
+            </p>
+            <p>Behind the scenes, we have:
+                <ul>
+                    <li>Hibernate ORM taking care of all CRUD operations.</li>
+                    <li>Quarkus Framework 2.4.1.Final.</li>
+                    <li>Openshift 4.9 as a Container Platform.</li>
+                    <li>Tekton for CI/CD.</li>
+                    <li>Openshift Service Mesh</li>
+                    <li>PostgreSQL for Database persistence.</li>
+                </ul>
+            </p>
+        </div>
+
+        <div id="notes">
+            <center>
+                <h3>Published Notes List</h3>
+                <div class="row">
+                    <div class="col-2">Name</div>
+                    <div class="col-3">Contents</div>
+                </div>
+                <div class="row" ng-repeat="note in notes">
+                    <div class="col-2">{{ note.name }}</div>
+                    <div class="col-3">{{ note.contents }}</div>
+                    <div class="col-4"><a ng-click="edit( note )" class="btn">Edit</a> <a ng-click="remove( note )" class="btn">Remove</a>
+                    </div>
+                </div>
+            </center>
+
+            <center>
+                <h3>Add a new Note or Edit an existing one.</h3>
+                <form ng-submit="update()">
+                    <div class="row">
+                        <div class="col-4"><input type="text" placeholder="Name" ng-model="form.name" size="30"/></div>
+                        <div class="col-5"><input type="text" placeholder="Contents" ng-model="form.contents" size="90"/></div>
+                        <div class="col-3"><input type="submit" value="Save"/></div>
+                    </div>
+                </form>
+            </center>
+        </div>
+
+        <div><center><h1>Powered By: </h1><img src="quarkus-logo.png" style="width:30%;"/><span style="display:inline-block; width: 50px;"></span><img src="openshift.png" style="width:20%;"/><span style="display:inline-block; width: 50px;"></span><img src="istio.png" style="width:20%;"/></center></div>
+        <span style="display:inline-block; height: 20px;"/>
+    </div>
+  </body>
+</html>
