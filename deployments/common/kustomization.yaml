@@ -1,0 +1,7 @@
+resources:
+- java-runner-deployment.yaml
+- java-runner-service.yaml
+- servicemonitor.yaml
+configurations:
+  - crds/crd.yaml
+
