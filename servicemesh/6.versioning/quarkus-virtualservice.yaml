@@ -1,0 +1,34 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: quarkus-demo-vs
+spec:
+  hosts:
+    - quarkus-notes.apps.lab01.gpslab.club
+  gateways:
+  - quarkus-demo-gateway
+  http:
+  - name: "Frontend served by v2"
+    match:
+    - uri:
+        exact: /
+    - uri:
+        regex: '^.*\.(ico|png|jpg)$'
+    route:
+    - destination:
+        host: frontend-java-runner-service-v2
+        subset: app-v2
+        port:
+          number: 80
+  - name: "API served by v1"
+    match:
+    - uri:
+        prefix: /notes
+    route:
+    - destination:
+        host: frontend-java-runner-service-v1
+        subset: app-v1
+        port:
+          number: 80
+
