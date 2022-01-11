@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineRun
 metadata:
-  generateName: container-build-run-
+  generateName: v1-container-build-run-
 spec:
   pipelineRef:
     name: container-build-pipeline
