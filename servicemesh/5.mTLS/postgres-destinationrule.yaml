@@ -1,8 +1,8 @@
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: postgres-app-destinations
+  name: postgres-app-destination-v1-community
 spec:
   host: backend-postgres-service-v1-community
   trafficPolicy:

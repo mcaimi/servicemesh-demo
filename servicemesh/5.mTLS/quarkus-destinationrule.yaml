@@ -1,8 +1,8 @@
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: quarkus-app-destinations
+  name: quarkus-app-destination-v1
 spec:
   host: frontend-java-runner-service-v1
   trafficPolicy:
