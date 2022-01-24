@@ -333,6 +333,56 @@ Kiali now recomputes the service graph accordingly:
 
 ![kiali-v2](/assets/kiali-v2.png)
 
+### Migrate API traffic to API v2 (Jaeger-enabled)
+
+To redirect all traffic to the V2 endpoint even for API calls (which are instrumented by Jaeger), the virtualservice must be modified:
+
+```yaml
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: quarkus-demo-vs
+spec:
+  hosts:
+    - quarkus-notes.apps.lab01.gpslab.club
+  gateways:
+  - quarkus-demo-gateway
+  http:
+  - name: "Frontend and API served by v2"
+    route:
+    - destination:
+        host: frontend-java-runner-service-v2
+        subset: app-v2
+        port:
+          number: 80
+
+```
+
+Then, update the running manifests:
+
+```bash
+# update the virtualservice
+$ oc apply -f servicemesh/7.service_move/quarkus-virtualservice.yaml
+# remove old manifests that are no more needed
+$ oc delete dr quarkus-app-destination-v1 quarkus-app-destinations
+destinationrule.networking.istio.io "quarkus-app-destination-v1" deleted
+destinationrule.networking.istio.io "quarkus-app-destinations" deleted
+
+# remove quarkus-v1 deployment
+$ kustomize build deployments/quarkus-app-v1|oc delete -f -
+
+```
+
+The new service graph is now updated in Kiali:
+
+![kiali-v3](/assets/kiali-v3.png)
+
+Since the API backend is now configured to send spans to the Jaeger collector, tracing info related to API calls are displayed in the Jaeger console:
+
+![jaeger](/assets/jaeger.png)
+
+
 ## Related Guides
 
 - RESTEasy JAX-RS ([guide](https://quarkus.io/guides/rest-json)): REST endpoint framework implementing JAX-RS and more
