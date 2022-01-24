@@ -115,6 +115,11 @@ spec:
               secretKeyRef:
                 name: quarkus-init-secret
                 key: flyway_baseline_on_migrate
+          - name: JAEGER_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: quarkus-init-secret
+                key: jaeger_endpoint
         ports:
         - containerPort: 8080
           protocol: TCP

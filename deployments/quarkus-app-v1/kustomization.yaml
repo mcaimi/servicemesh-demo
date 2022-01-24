@@ -10,6 +10,7 @@ commonAnnotations:
   deployedBy: "oc-kustomize"
   chain: "tekton-pipeline"
   environment: "istio-demo"
+  app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"backend-postgres-v1-community"}]'
 patchesStrategicMerge:
 - mem-sizing.yaml
 secretGenerator:
@@ -34,6 +35,7 @@ secretGenerator:
   - flyway_migration_table=prod_history
   - flyway_migrations_location=db/migrations/prod
   - flyway_baseline_on_migrate=true
+  - jaeger_endpoint=none
 images:
 - name: java-runner
   newName: image-registry.openshift-image-registry.svc:5000/istio-demo/demo-app-frontend
