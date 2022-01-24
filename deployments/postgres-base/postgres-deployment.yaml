@@ -18,7 +18,7 @@ spec:
       serviceAccount: default
       automountServiceAccountToken: true
       containers:
-      - image: docker.io/library/postgres:latest
+      - image: postgres
         imagePullPolicy: Always
         name: postgres
         env:
