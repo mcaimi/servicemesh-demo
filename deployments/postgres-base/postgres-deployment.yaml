@@ -15,7 +15,7 @@ spec:
       labels:
         app: postgres
     spec:
-      serviceAccount: default
+      serviceAccountName: postgres-sa
       automountServiceAccountToken: true
       containers:
       - image: postgres
