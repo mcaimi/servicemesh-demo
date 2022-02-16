@@ -73,7 +73,7 @@ $ oc new-project istio-demo
 For the container image build pipeline:
 
 ```bash
-for i in build-pvc pipeline-resources quarkus-maven-task quarkus-build-task clean-workspace-task quarkus-build-pipeline; do
+for i in build-pvc pipeline-resources quarkus-maven-task quarkus-build-task cleanup-workspace-task quarkus-build-pipeline; do
   oc create -f tekton/$i.yaml -n istio-demo
 done
 ```
