@@ -1,0 +1,20 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: postgres-authz
+ namespace: istio-demo
+spec:
+ selector:
+   matchLabels:
+     app: k8s-postgres-app
+     version: v1-community
+ action: ALLOW
+ rules:
+ - from:
+   - source:
+       principals:
+         - "cluster.local/ns/istio-demo/sa/frontend-java-runner-sa-v2"
+   to:
+     -  operation:
+          ports: ["5432"]
