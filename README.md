@@ -181,9 +181,74 @@ In Kiali, the application topology is automatically discovered and displayed:
 
 At this point, all requests are routed from the istio Ingress Gateway to the service exposing the quarkus app version 1, which in turn uses the backend DB.
 
+### Deploy Authorization Policies
+
+The deployment application can be secured by deploying Istio AuthorizationPolicies. Policies will be sent to all envoy proxies and enforced by the Mesh.
+
+For example, we may want to restrict access to the frontend application to only allow HTTP and API calls coming from the Istio Gateway:
+
+```yaml
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: frontend-authz
+ namespace: istio-demo
+spec:
+ selector:
+   matchLabels:
+     app: k8s-quarkus-app
+ action: ALLOW
+ rules:
+ - from:
+     - source:
+         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+   to:
+     - operation:
+        method: ["GET", "POST"]
+        paths: ["/notes/*"]
+     - operation:
+        method: ["GET"]
+        paths: ["/", "*png", "*js"]
+```
+The above manifest instructs Istio to only allow traffic coming from workloads running under the ingress gateway service account: the policy allows 'GET' and 'POST' http calls to the '/notes/' API endpoint and only 'GET' calls to static content.
+
+To secure access to the background DB anoter manifest needs to be deployed:
+
+```yaml
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: postgres-authz
+ namespace: istio-demo
+spec:
+ selector:
+   matchLabels:
+     app: k8s-postgres-app
+     version: v1-community
+ action: ALLOW
+ rules:
+ - from:
+   - source:
+       principals:
+         - "cluster.local/ns/istio-demo/sa/frontend-java-runner-sa-v1"
+         - "cluster.local/ns/istio-demo/sa/frontend-java-runner-sa-v2"
+   to:
+     -  operation:
+          ports: ["5432"]
+```
+
+The above manifest will only allow TCP traffic directed to port 5432/TCP and only from workloads running under application service accounts.
+
+```bash
+$ oc create -f servicemesh/4.authorization_policy/frontend-authz.yaml
+$ oc create -f servicemesh/4.authorization_policy/postgres-authz.yaml
+```
+
 ### Encrypt traffic on the Mesh Overlay
 
-By default, all traffic flowing between Envoy Proxies is not encrypted. Encryption can be enabled by using mTLS globally on the control plane or by settung up a Policy on a per-namespace basis.
+By default, all traffic flowing between Envoy Proxies is not encrypted. Encryption can be enabled by using mTLS globally on the control plane or by setting up a Policy on a per-namespace basis.
 
 This can be done by setting up a PeerAuthentication manifest with a STRICT tls policy:
 
@@ -371,7 +436,6 @@ destinationrule.networking.istio.io "quarkus-app-destinations" deleted
 
 # remove quarkus-v1 deployment
 $ kustomize build deployments/quarkus-app-v1|oc delete -f -
-
 ```
 
 The new service graph is now updated in Kiali:
