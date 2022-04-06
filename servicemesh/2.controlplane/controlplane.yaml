@@ -5,6 +5,12 @@ metadata:
   name: istio-ctlplane
 spec:
   version: v2.1
+  security:
+    controlPlane:
+      mtls: false
+    dataPlane:
+      mtls: false
+    manageNetworkPolicies: true
   gateways:
     enabled: true
     ingress:
