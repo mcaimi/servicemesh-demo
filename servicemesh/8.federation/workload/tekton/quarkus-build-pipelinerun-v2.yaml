@@ -1,0 +1,24 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  generateName: v2-container-build-run-
+spec:
+  pipelineRef:
+    name: container-build-pipeline
+  resources:
+  - name: k8s-demo-app-github-repo
+    resourceRef:
+      name: k8s-demo-app-github-repo-v2
+  - name: output-runnable-image
+    resourceRef:
+      name: istio-demo-app-frontend-image
+  params:
+    - name: dockerfilePath
+      value: "src/main/docker"
+    - name: dockerTag
+      value: "v2"
+  workspaces:
+  - name: quarkus-maven-repo
+    persistentVolumeClaim:
+      claimName: build-pvc

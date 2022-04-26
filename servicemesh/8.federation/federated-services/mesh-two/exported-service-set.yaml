@@ -1,0 +1,18 @@
+kind: ExportedServiceSet
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-one
+  namespace: mesh-two
+spec:
+  exportRules:
+  # export services with the correct label set
+  - type: LabelSelector
+    labelSelector:
+      namespace: backend-namespace
+      selector:
+        matchLabels:
+          app: k8s-postgres-app
+          version: v1-community
+      aliases:
+      - alias:
+          namespace: backend

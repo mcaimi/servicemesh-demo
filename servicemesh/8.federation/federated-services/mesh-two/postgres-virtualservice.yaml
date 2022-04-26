@@ -1,0 +1,21 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: postgres-demo-vs
+  namespace: backend-namespace
+  labels:
+    app: k8s-postgres-app
+    version: v1-community
+spec:
+  hosts:
+    - postgres-service.backend-namespace.svc.cluster.local
+  tcp:
+  - match:
+    - port: 5432
+    route:
+    - destination:
+        host: postgres-service.backend-namespace.svc.cluster.local
+        port:
+          number: 5432
+

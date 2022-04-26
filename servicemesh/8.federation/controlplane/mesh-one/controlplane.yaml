@@ -1,0 +1,72 @@
+apiVersion: maistra.io/v2
+kind: ServiceMeshControlPlane
+metadata:
+  namespace: mesh-one
+  name: mesh-one
+spec:
+  proxy:
+    accessLogging:
+      file:
+        name: /dev/stdout     #file name
+  cluster:
+    name: frontend-cluster
+    network: mesh-one-network
+  security:
+    trust:
+      domain: mesh-one.local
+  version: v2.1
+  runtime:
+    defaults:
+      container:
+        imagePullPolicy: Always
+  gateways:
+    openshiftRoute:
+      enabled: false
+    additionalEgress:
+      mesh-two-egress:
+        enabled: true
+        requestedNetworkView:
+        - mesh-two-network
+        routerMode: sni-dnat
+        service:
+          metadata:
+            labels:
+              federation.maistra.io/egress-for: mesh-two-egress
+          ports:
+          - port: 15443
+            name: tls
+          - port: 8188
+            name: http-discovery
+    additionalIngress:
+      mesh-two-ingress:
+        enabled: true
+        routerMode: sni-dnat
+        service:
+          type: ClusterIP # ClusterIP or LoadBalancer or NodePort, LB in this case must be externally provisioned
+          metadata:
+            labels:
+              federation.maistra.io/ingress-for: mesh-two-ingress
+          ports:
+          - port: 15443
+            name: tls
+          - port: 8188
+            name: https-discovery
+  tracing:
+    sampling: 10000
+    type: Jaeger
+  policy:
+    type: Istiod
+  addons:
+    grafana:
+      enabled: true
+    jaeger:
+      install:
+        storage:
+          type: Memory
+    kiali:
+      enabled: true
+    prometheus:
+      enabled: true
+  telemetry:
+    type: Istiod
+

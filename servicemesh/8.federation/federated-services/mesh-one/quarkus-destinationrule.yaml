@@ -1,0 +1,14 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: quarkus-app-destinations
+  namespace: frontend-namespace
+spec:
+  host: java-runner-service.frontend-namespace.svc.cluster.local
+  subsets:
+  - name: app-v2
+    labels:
+      app: k8s-quarkus-app
+      version: v2
+

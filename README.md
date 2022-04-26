@@ -39,7 +39,7 @@ Refer [here](https://istio.io) and [here](https://docs.openshift.com/container-p
 Deploy the operator using the provided Kustomize templates:
 
 ```bash
-$ kustomize build servicemesh/1.operator | oc apply -f -
+$ kustomize build --reorder none servicemesh/1.operator | oc apply -f -
 ```
 
 or add the operator from the Openshift Console:
@@ -446,6 +446,253 @@ Since the API backend is now configured to send spans to the Jaeger collector, t
 
 ![jaeger](/assets/jaeger.png)
 
+## Multicluster Federation
+
+Openshift ServiceMesh supports Federation between two or more meshes running locally on the same cluster or running across different cluster instances.
+Federation allows Administrators to manage and view two or more Istio Meshes as if they were one and allows applications to consume services from any of the federated evironments.
+
+The example consists of:
+
+1. Two Istio Meshes running inside the same Openshift Cluster
+2. Peering is configured via ClusterIP services (if deploying on different clusters, LoadBalancer or NodePort type service are required)
+3. One mesh will expose the application frontend
+4. The other mesh will export the database as a federated service
+
+### Deploy Meshes
+
+Deploy both meshes with kustomize:
+
+```bash
+# Mesh One
+$ kustomize build --reorder none servicemesh/8.federation/mesh-one | oc apply -f -
+# Mesh Two
+$ kustomize build --reorder none servicemesh/8.federation/mesh-two | oc apply -f -
+```
+
+This operation will create :
+
+1. Mesh One control plane + frontend-namespace as its member project
+2. Mesh Two control plane + backend-namespace as its member project
+
+Control Planes are already configured for federation (i.e. both meshes declare their own trust domain and ingress/egress pairs for federation)
+
+### Extract root-ca certificates and configure peering
+
+For every mesh, save the istio root CA certificate in a configmap. This CA is valid for the trust domain specified in the SCMP manifests of both meshes:
+
+```bash
+# For peering mesh-one with mesh-two
+$ oc get cm istio-ca-root-cert -n mesh-two -o jsonpath='{.data.root-cert\.pem}' > /tmp/mesh-two.pem
+$ oc create configmap mesh-two-ca-root-cert -n mesh-one --from-file=root-cert.pem=/tmp/mesh-two.pem
+# For peering mesh-two with mesh-one
+$ oc get cm istio-ca-root-cert -n mesh-one -o jsonpath='{.data.root-cert\.pem}' > /tmp/mesh-one.pem
+$ oc create configmap mesh-one-ca-root-cert -n mesh-two --from-file=root-cert.pem=/tmp/mesh-one.pem
+```
+
+This will allow discovery and mutual tls authentication between Istio deployments. Peering is configured by declaring ServiceMeshPeer manifests:
+
+```yaml
+kind: ServiceMeshPeer
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-two
+  namespace: mesh-one
+spec:
+  remote:
+    addresses:
+    - mesh-one-ingress.mesh-two.svc.cluster.local
+    discoveryPort: 8188
+    servicePort: 15443
+  gateways:
+    ingress:
+      name: mesh-two-ingress
+    egress:
+      name: mesh-two-egress
+  security:
+    trustDomain: mesh-two.local
+    clientID: mesh-two.local/ns/mesh-two/sa/mesh-one-egress-service-account
+    certificateChain:
+      kind: ConfigMap
+      name: mesh-two-ca-root-cert
+```
+
+Apply peering manifests:
+
+```bash
+$ oc apply -f servicemesh/8.federation/peering/peering-mesh-one.yaml
+$ oc apply -f servicemesh/8.federation/peering/peering-mesh-two.yaml
+```
+
+Peering is mutual, so configuration needs to be performed on both sides. After a while, peering should be up & running:
+
+For Mesh One to Mesh Two:
+
+```yaml
+#  oc get servicemeshpeer mesh-two -o yaml -n mesh-one
+status:
+  discoveryStatus:
+    active:
+    - pod: istiod-mesh-one-6cbb95f8dc-khgs4
+      remotes:
+      - connected: true
+        lastConnected: "2022-04-07T07:48:40Z"
+        lastFullSync: "2022-04-07T07:53:40Z"
+        source: 10.131.1.99
+```
+
+And for Mesh Two to Mesh One:
+
+```yaml
+#  oc get servicemeshpeer mesh-one -o yaml -n mesh-two
+status:
+  discoveryStatus:
+    active:
+    - pod: istiod-mesh-two-74dd58d75-5ps47
+      remotes:
+      - connected: true
+        lastConnected: "2022-04-07T07:48:42Z"
+        lastFullSync: "2022-04-07T07:52:54Z"
+        source: 10.131.1.94
+```
+
+### Export Services Across Meshes
+
+Federation assumes that services running in either mesh are *exported* from their source environment explicitly. Federating two or more meshes together does not automatically allow services on one mesh to consume endpoints on other meshes.
+
+*MESH TWO*: Deploy the Database Service in Mesh Two
+
+Deploy a PostgreSQL instance in the backend-namespace:
+
+```bash
+# deploy postgres in mesh-two
+$ kustomize build --reorder none servicemesh/8.federation/workload/postgres-mesh-two | oc apply -f -
+```
+The service is displayed in the Kiali Console for the backend-cluster mesh instance:
+
+![mesh-backend-cluster](/assets/mesh-backend-cluster.png)
+
+Now from this namespace, export the postgres service in order to be consumed from the service running in mesh-one:
+
+```yaml
+kind: ExportedServiceSet
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-one
+  namespace: mesh-two
+spec:
+  exportRules:
+  # export services with the correct label set
+  - type: LabelSelector
+    labelSelector:
+      namespace: backend-namespace
+      selector:
+        matchLabels:
+          app: k8s-postgres-app
+      aliases:
+      - alias:
+          namespace: backend
+```
+
+this manifest will match any service with the *app: k8s-postgres-app* label and re-export them to the mesh-one peer.
+
+```bash
+$ oc apply -f servicemesh/8.federation/federated-services/mesh-two/exported-service-set.yaml -n mesh-two
+```
+
+Once exported, the service should be listed in the status field of the ExportedServiceSet object in mesh-two namespace:
+
+```json
+$ oc get exportedserviceset.federation.maistra.io/mesh-one -n mesh-two -o jsonpath='{.status}' | jq .
+{
+  "exportedServices": [
+    {
+      "exportedName": "postgres-service.backend.svc.mesh-one-exports.local",
+      "localService": {
+        "hostname": "postgres-service.backend-namespace.svc.cluster.local",
+        "name": "postgres-service",
+        "namespace": "backend-namespace"
+      }
+    }
+  ]
+}
+```
+
+*MESH ONE*: Deploy the Quarkus frontend in Mesh One
+
+The Frontend Service will be built and deployed in the frontend-namespace, which is a member of Mesh One:
+
+```bash
+# Build the application
+$ for i in build-pvc pipeline-resources quarkus-maven-task quarkus-build-task cleanup-workspace-task quarkus-build-pipeline; do
+  oc create -f tekton/$i.yaml -n frontend-namespace
+done
+$ oc replace -f servicemesh/8.federation/workload/tekton/pipeline-resources.yaml -n frontend-namespace
+$ oc create -f servicemesh/8.federation/workload/tekton/quarkus-build-pipelinerun-v2.yaml -n frontend-namespace
+```
+
+As with the backend before, the application is visible in the Kiali console of the frontend-cluster mesh:
+
+![mesh-frontend-cluster](/assets/mesh-frontend-cluster.png)
+
+Finally, the exported service exposed from mesh-two needs to be imported locally in order to be consumed from mesh-one:
+
+```bash
+$ oc apply -n mesh-one -f servicemesh/8.federation/federated-services/mesh-one/imported-service-set.yaml
+```
+
+This will deploy an Imported Service Set manifest:
+
+```yaml
+kind: ImportedServiceSet
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-two
+  namespace: mesh-one
+spec:
+  importRules: # first matching rule is used
+  - type: NameSelector
+    importAsLocal: false
+    nameSelector:
+      namespace: backend
+      name: postgres-service
+      alias:
+        # service will be imported as postgres-service.backend.svc.mesh-two-imports.local
+        namespace: backend
+        name: postgres-service
+```
+
+Once imported, the service should appear in the Imported Services List:
+
+```json
+$ oc get importedserviceset.federation.maistra.io/mesh-two -n mesh-one -o jsonpath='{.status}'|jq .
+{
+  "importedServices": [
+    {
+      "exportedName": "postgres-service.backend.svc.mesh-one-exports.local",
+      "localService": {
+        "hostname": "postgres-service.backend.svc.mesh-two-imports.local",
+        "name": "postgres-service",
+        "namespace": "backend"
+      }
+    }
+  ]
+}
+```
+
+With the imported service name available locally, the frontend application may be deployed:
+
+```bash
+# deploy the application
+$ kustomize build --reorder none servicemesh/8.federation/workload/quarkus-app-mesh-one | oc apply -f -
+```
+
+Now for this deployment to work, a couple objects need to be created in the frontend-namespace project:
+
+```bash
+$ for i in istio-gateway quarkus-virtualservice quarkus-destinationrule; do
+    oc apply -f servicemesh/8.federation/federated-services/mesh-one/$i.yaml -n frontend-namespace
+done
+```
 
 ## Related Guides
 
@@ -459,6 +706,5 @@ Since the API backend is now configured to send spans to the Jaeger collector, t
 Container image build pipelines currently require the privileged SCC to be attached to the 'pipeline' ServiceAccount in order to successfully run:
 
 ```bash
-oc adm add-scc-to-user privileged -z system:serviceaccount:istio-demo:pipeline
+oc adm policy add-scc-to-user privileged system:serviceaccount:<target_namespace>:pipeline
 ```
-

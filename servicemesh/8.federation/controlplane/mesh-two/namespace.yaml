@@ -1,0 +1,10 @@
+---
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: mesh-two
+---
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: backend-namespace

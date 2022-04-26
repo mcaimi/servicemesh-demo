@@ -1,0 +1,16 @@
+kind: ImportedServiceSet
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-two
+  namespace: mesh-one
+spec:
+  importRules: # first matching rule is used
+  - type: NameSelector
+    importAsLocal: false
+    nameSelector:
+      namespace: backend
+      name: postgres-service
+      alias:
+        # service will be imported as postgres-service.backend.svc.mesh-two-imports.local
+        namespace: backend
+        name: postgres-service

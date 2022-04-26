@@ -1,0 +1,39 @@
+bases:
+  - ../../../../deployments/common
+namespace: frontend-namespace
+commonLabels:
+  app: k8s-quarkus-app
+  version: v2
+commonAnnotations:
+  deployedBy: "oc-kustomize"
+  chain: "tekton-pipeline"
+  environment: "federation-mesh-one"
+patchesStrategicMerge:
+- mem-sizing.yaml
+secretGenerator:
+- name: quarkus-init-secret
+  literals:
+  - postgres_app_user=prod_user
+  - postgres_app_db=prod_db
+  - postgres_app_user_password=hibernate
+  - db_driver=postgresql
+  - db_hostname=postgres-service.backend.svc.mesh-two-imports.local
+  - db_port=5432
+  - orm_log=true
+  - default_schema=prod_schema
+  - db_generation=none
+  - hibernate_load_file=no-file
+  - jdbc_max_size=8
+  - jdbc_min_size=2
+  - flyway_migrate_at_start=true
+  - flyway_baseline_version=1.0.0
+  - flyway_baseline_description=Prod_Initial
+  - flyway_connection_retries=300
+  - flyway_migration_table=prod_history
+  - flyway_migrations_location=db/migrations/prod
+  - flyway_baseline_on_migrate=true
+  - jaeger_endpoint=http://jaeger-collector.mesh-one.svc:14268/api/traces
+images:
+- name: java-runner
+  newName: image-registry.openshift-image-registry.svc:5000/frontend-namespace/demo-app-frontend
+  newTag: v2

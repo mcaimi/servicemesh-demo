@@ -1,0 +1,22 @@
+kind: ServiceMeshPeer
+apiVersion: federation.maistra.io/v1
+metadata:
+  name: mesh-one
+  namespace: mesh-two
+spec:
+  remote:
+    addresses:
+    - mesh-two-ingress.mesh-one.svc.cluster.local
+    discoveryPort: 8188
+    servicePort: 15443
+  gateways:
+    ingress:
+      name: mesh-one-ingress
+    egress:
+      name: mesh-one-egress
+  security:
+    trustDomain: mesh-one.local
+    clientID: mesh-one.local/ns/mesh-one/sa/mesh-two-egress-service-account
+    certificateChain:
+      kind: ConfigMap
+      name: mesh-one-ca-root-cert
