@@ -7,8 +7,8 @@
   <version>1.1.1-SNAPSHOT</version>
 
   <properties>
-    <compiler-plugin.version>3.8.1</compiler-plugin.version>
-    <jacoco.version>0.8.7</jacoco.version>
+    <compiler-plugin.version>3.10.1</compiler-plugin.version>
+    <jacoco.version>0.8.1</jacoco.version>
     <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <java.version>11</java.version>
@@ -17,11 +17,11 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus-plugin.version>2.4.1.Final</quarkus-plugin.version>
+    <quarkus-plugin.version>2.16.2.Final</quarkus-plugin.version>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-    <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-    <quarkus.platform.version>2.4.1.Final</quarkus.platform.version>
-    <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.version>2.16.2.Final</quarkus.platform.version>
+    <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
   </properties>
 
   <dependencyManagement>
