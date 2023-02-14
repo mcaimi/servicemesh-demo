@@ -14,4 +14,4 @@ spec:
         host: backend-postgres-service-v1-community
         port:
           number: 5432
-
+      weight: 100
