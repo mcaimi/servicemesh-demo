@@ -11,6 +11,7 @@ commonLabels:
   master: kube-kustomize
 
 resources:
+  - namespace.yaml
   - kiali-subscription.yaml
   - distributed-tracing-subscription.yaml
   - istio-subscription.yaml
