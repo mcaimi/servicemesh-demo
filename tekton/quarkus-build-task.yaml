@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: quarkus-build-task
@@ -6,22 +6,21 @@ spec:
   workspaces:
     - name: maven-repo
       mountPath: /workspace/source
-  inputs:
-    params:
-      - name: TLS_VERIFY
-        description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
-        default: "false"
-        type: string
-      - name: dockerfilePath
-        type: string
-        description: Relative path under which the Dockerfile is located
-        default: "src/main/docker"
-      - name: dockerTag
-        type: string
-        description: Docker Tag reflecting the image version
-        default: "latest"
-  outputs:
-    resources:
+  params:
+    - name: TLS_VERIFY
+      description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+      default: "false"
+      type: string
+    - name: dockerfilePath
+      type: string
+      description: Relative path under which the Dockerfile is located
+      default: "src/main/docker"
+    - name: dockerTag
+      type: string
+      description: Docker Tag reflecting the image version
+      default: "latest"
+  resources:
+    outputs:
       - name: image
         type: image
   steps:

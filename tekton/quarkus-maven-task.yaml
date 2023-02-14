@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: quarkus-maven-task
@@ -6,13 +6,13 @@ spec:
   workspaces:
   - name: maven-repo
     mountPath: /workspace/source
-  inputs:
-    params:
-    - name: GOALS
-      description: The Maven goals to run
-      type: array
-      default: ["package"]
-    resources:
+  params:
+  - name: GOALS
+    description: The Maven goals to run
+    type: array
+    default: ["package"]
+  resources:
+    inputs:
     - name: source
       type: git
   steps:
