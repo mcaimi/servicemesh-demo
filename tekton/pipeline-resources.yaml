@@ -31,4 +31,4 @@ spec:
   - name: url
     value: https://github.com/mcaimi/servicemesh-demo
   - name: revision
-    value: main
+    value: federation
