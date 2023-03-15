@@ -15,7 +15,7 @@ The code contained in this repository shows a simple real-world application that
 - Kustomize templates for deployment are provided in this repository
 
 The application code is based on the Quarkus Application that is found [here](https://github.com/mcaimi/k8s-demo-app). That application (which is based on Quarkus 1.13.2) is deployed as "v1" inside the service mesh.
-Another instance of the same application (found in this repository) acts as "v2". The application has been rebased to Quarkus 2.4 and the frontend has been updated.
+Another instance of the same application acts as "v2". The application has been rebased to the latest Quarkus release and can be found [here](https://github.com/mcaimi/quarkus-notes).
 
 ## Building the container image using Tekton on Openshift Container Platform (or Kubernetes)
 
