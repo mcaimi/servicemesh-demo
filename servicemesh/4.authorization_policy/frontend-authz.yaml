@@ -17,9 +17,9 @@ spec:
          principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
    to:
      - operation:
-        method: ["GET", "POST"]
+        methods: ["GET", "POST", "PUT", "DELETE"]
         paths: ["/notes/*"]
      - operation:
-        method: ["GET"]
+        methods: ["GET"]
         paths: ["/", "*png", "*js"]
 
