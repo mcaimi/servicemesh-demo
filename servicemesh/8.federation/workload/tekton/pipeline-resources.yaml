@@ -29,6 +29,6 @@ spec:
   type: git
   params:
   - name: url
-    value: https://github.com/mcaimi/servicemesh-demo
+    value: https://github.com/mcaimi/quarkus-notes
   - name: revision
     value: main
